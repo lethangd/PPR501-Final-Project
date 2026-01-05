@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách Sinh viên</title>
+    <style>
+        /* 
+         * Styles cho trang HTML sinh viên
+         * Trang này được sử dụng cho crawler scraping
+         */
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+                         'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        
+        h1 {
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+        }
+        
+        .description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Table styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        th {
+            color: white;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid #e5e5e5;
+            transition: background-color 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        
+        tbody tr:nth-child(even):hover {
+            background-color: #f0f4ff;
+        }
+        
+        td {
+            padding: 12px 16px;
+            vertical-align: middle;
+        }
+        
+        /* Empty cell styling */
+        td:empty::after {
+            content: '—';
+            color: #ccc;
+        }
+        
+        /* Score highlighting */
+        .score-high {
+            color: #059669;
+            font-weight: 600;
+        }
+        
+        .score-low {
+            color: #dc2626;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e5e5;
+            color: #888;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Danh sách Sinh viên</h1>
+        <p class="description">
+            Trang này được sử dụng cho crawler project (pandas.read_html).
+            Tổng số: <strong>{{ students | length }}</strong> sinh viên.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ</th>
+                    <th>Tên</th>
+                    <th>Email</th>
+                    <th>Ngày sinh</th>
+                    <th>Quê quán</th>
+                    <th>Toán</th>
+                    <th>Văn</th>
+                    <th>Anh</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td><strong>{{ s.student_id }}</strong></td>
+                    <td>{{ s.last_name or '' }}</td>
+                    <td>{{ s.first_name or '' }}</td>
+                    <td>{{ s.email or '' }}</td>
+                    <td>{{ s.birth_date or '' }}</td>
+                    <td>{{ s.hometown or '' }}</td>
+                    <td>{{ s.math_score if s.math_score is not none else '' }}</td>
+                    <td>{{ s.literature_score if s.literature_score is not none else '' }}</td>
+                    <td>{{ s.english_score if s.english_score is not none else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            Student Management API — PPR501 Final Project
+        </div>
+    </div>
+</body>
+</html>
