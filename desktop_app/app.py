@@ -10,7 +10,7 @@ from typing import Dict
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-from .charts import build_figure
+from .charts import build_figures
 from .student_api import ApiError, StudentApiClient
 from .xml_parser import StudentRecord, to_api_payload
 
@@ -74,10 +74,22 @@ class StudentApp(ttk.Frame):
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(0, weight=1)
 
-        self.chart_container = ttk.Frame(parent)
-        self.chart_container.grid(row=0, column=0, sticky="nsew")
+        self._stats_canvas = tk.Canvas(parent, highlightthickness=0)
+        self._stats_scroll = ttk.Scrollbar(parent, orient="vertical", command=self._stats_canvas.yview)
+        self._stats_canvas.configure(yscrollcommand=self._stats_scroll.set)
 
-        self._chart_canvas: FigureCanvasTkAgg | None = None
+        self._stats_scroll.grid(row=0, column=1, sticky="ns")
+        self._stats_canvas.grid(row=0, column=0, sticky="nsew")
+
+        self.chart_container = ttk.Frame(self._stats_canvas)
+        self._stats_canvas.create_window((0, 0), window=self.chart_container, anchor="nw")
+
+        self.chart_container.bind(
+            "<Configure>",
+            lambda _e: self._stats_canvas.configure(scrollregion=self._stats_canvas.bbox("all")),
+        )
+
+        self._chart_canvases: list[FigureCanvasTkAgg] = []
         self._render_charts([])
 
     def _build_table(self, parent: ttk.Frame) -> None:
@@ -282,14 +294,15 @@ class StudentApp(ttk.Frame):
             self.tree.insert("", tk.END, iid=s.student_id, values=s.to_row())
 
     def _render_charts(self, students: list[StudentRecord]) -> None:
-        fig = build_figure(students)
+        for canvas in self._chart_canvases:
+            canvas.get_tk_widget().destroy()
+        self._chart_canvases.clear()
 
-        if self._chart_canvas is not None:
-            self._chart_canvas.get_tk_widget().destroy()
-
-        self._chart_canvas = FigureCanvasTkAgg(fig, master=self.chart_container)
-        self._chart_canvas.draw()
-        self._chart_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        for fig in build_figures(students):
+            canvas = FigureCanvasTkAgg(fig, master=self.chart_container)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, pady=8)
+            self._chart_canvases.append(canvas)
 
     def _show_api_error(self, err: ApiError) -> None:
         self._set_status("Lỗi")
