@@ -17,7 +17,8 @@ COPY crawl_and_analyze.py .
 RUN mkdir -p /app/output
 
 # Default: use Docker network hostname (backend instead of localhost)
-ENV CRAWLER_URL=http://backend:8000/students
+# Prefer XML API (more stable than HTML scraping)
+ENV CRAWLER_URL=http://backend:8000/api/students
 
 # Default command
 CMD ["sh", "-c", "python crawl_and_analyze.py --url $CRAWLER_URL"]

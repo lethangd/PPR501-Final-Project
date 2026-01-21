@@ -32,6 +32,7 @@ echo [INFO] Running crawler...
 echo.
 
 REM Run crawler with volume mount for output
+REM Crawler image defaults to http://backend:8000/api/students
 docker run --rm -v "%cd%/output:/app/output" --network ppr501-final-project_default student-crawler
 
 if errorlevel 0 (

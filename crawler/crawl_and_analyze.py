@@ -3,13 +3,14 @@
 Student Data Crawler & Analyzer.
 
 This module provides functionality to:
-1. Crawl student data from HTML table on the backend
+1. Crawl student data from backend API (XML)
 2. Clean and normalize the data using Pandas
 3. Perform statistical analysis (correlation, grouping, comparison)
 4. Export results to Excel file with multiple sheets
 
 Usage:
-    python crawl_and_analyze.py --url http://localhost:8000/students --out output/students.xlsx
+    python crawl_and_analyze.py --url http://localhost:8000/api/students --out output/students.xlsx
+
 
 Author: PPR501 Team
 Version: 1.0.0
@@ -19,95 +20,75 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict, List, Optional
+from xml.etree import ElementTree as ET
 
 import pandas as pd
 import requests
-
-# =============================================================================
-# Constants
-# =============================================================================
 
 # Score columns used for analysis
 SCORE_COLS: list[str] = ["math_score", "literature_score", "english_score"]
 
 # Default configuration
-DEFAULT_URL: str = "http://localhost:8000/students"
+# Use XML API by default
+DEFAULT_URL: str = "http://localhost:8000/api/students"
 DEFAULT_OUTPUT: str = "output/students.xlsx"
 
-# Column name mapping: Vietnamese (HTML) -> English (internal)
-# The HTML table uses Vietnamese headers for display
-COLUMN_MAPPING: dict[str, str] = {
-    "Mã SV": "student_id",
-    "Họ": "last_name",
-    "Tên": "first_name",
-    "Email": "email",
-    "Ngày sinh": "birth_date",
-    "Quê quán": "hometown",
-    "Toán": "math_score",
-    "Văn": "literature_score",
-    "Anh": "english_score",
-}
+def _xml_text_or_none(el: Optional[ET.Element]) -> Optional[str]:
+    if el is None or el.text is None:
+        return None
+    value = el.text.strip()
+    return value or None
 
 
-# =============================================================================
-# Data Crawling Functions
-# =============================================================================
+def crawl_students_xml(url: str) -> pd.DataFrame:
+    """Crawl student data from XML API endpoint.
 
-def crawl_students_table(url: str) -> pd.DataFrame:
-    """
-    Crawl student data from HTML table on the specified URL.
-    
-    Uses pandas.read_html() to parse HTML tables from the response.
-    The backend provides a styled HTML table at /students endpoint
-    specifically designed for this crawler.
-    
+    The backend returns:
+      <students><student>...</student></students>
+
     Args:
-        url: Full URL to the HTML page containing students table
-             Example: "http://localhost:8000/students"
-    
+        url: XML API endpoint URL
+             Example: "http://localhost:8000/api/students"
+
     Returns:
-        pd.DataFrame: Raw data extracted from the first table found
-                      with columns renamed to English
-        
-    Raises:
-        requests.HTTPError: If the HTTP request fails
-        RuntimeError: If no HTML table is found on the page
-        
-    Example:
-        >>> df = crawl_students_table("http://localhost:8000/students")
-        >>> print(df.shape)
-        (100, 9)
+        pd.DataFrame: Raw data with English column names
     """
-    from io import StringIO
-    
-    # Send HTTP GET request with timeout to prevent hanging
+
     resp = requests.get(url, timeout=30)
-    resp.raise_for_status()  # Raise exception for 4xx/5xx status codes
-    
-    # Parse all HTML tables from the response
-    # Use StringIO to wrap the HTML string (avoids deprecation warning)
-    tables = pd.read_html(StringIO(resp.text))
-    
-    if not tables:
+    resp.raise_for_status()
+
+    root = ET.fromstring(resp.text)
+    if root.tag != "students":
         raise RuntimeError(
-            f"No HTML table found on page: {url}\n"
-            "Ensure the backend is running and /students endpoint returns HTML table."
+            f"Unexpected XML root <{root.tag}> from {url}. "
+            "Expected <students>."
         )
-    
-    # Get the first table
-    df = tables[0]
-    
-    # Rename Vietnamese columns to English for analysis
-    # This allows the rest of the code to use consistent column names
-    df = df.rename(columns=COLUMN_MAPPING)
-    
-    return df
+
+    rows: List[Dict[str, Any]] = []
+    for student_el in root.findall("student"):
+        row: Dict[str, Any] = {}
+        for key in [
+            "student_id",
+            "last_name",
+            "first_name",
+            "email",
+            "birth_date",
+            "hometown",
+            "math_score",
+            "literature_score",
+            "english_score",
+        ]:
+            row[key] = _xml_text_or_none(student_el.find(key))
+        rows.append(row)
+
+    return pd.DataFrame(rows)
 
 
-# =============================================================================
-# Data Cleaning Functions
-# =============================================================================
+def crawl_students(url: str) -> pd.DataFrame:
+    """Crawl student data from XML API."""
+    return crawl_students_xml(url)
+
 
 def clean_students(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -163,10 +144,6 @@ def clean_students(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-
-# =============================================================================
-# Analysis Functions
-# =============================================================================
 
 def analyze(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     """
@@ -261,31 +238,24 @@ def analyze(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
     return results
 
 
-# =============================================================================
-# Main Entry Point
-# =============================================================================
-
 def main() -> None:
     """
     Main entry point for the crawler script.
     
     Workflow:
     1. Parse command line arguments
-    2. Crawl student data from HTML table
+    2. Crawl student data (XML API preferred)
     3. Clean and normalize the data
     4. Perform statistical analysis
     5. Export results to Excel file
     6. Print summary to console
     
     Command Line Args:
-        --url: URL of HTML page with students table
-               (default: http://localhost:8000/students)
+        --url: URL of XML API
+             (default: http://localhost:8000/api/students)
         --out: Output Excel file path
                (default: output/students.xlsx)
     """
-    # -------------------------------------------------------------------------
-    # Step 1: Parse command line arguments
-    # -------------------------------------------------------------------------
     parser = argparse.ArgumentParser(
         description="Crawl students from the website and export Excel + analysis.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -295,13 +265,13 @@ Examples:
     python crawl_and_analyze.py
     
     # Specify custom URL and output
-    python crawl_and_analyze.py --url http://localhost:8000/students --out results.xlsx
+    python crawl_and_analyze.py --url http://localhost:8000/api/students --out results.xlsx
         """
     )
     parser.add_argument(
         "--url",
         default=DEFAULT_URL,
-        help=f"HTML page containing the students table (default: {DEFAULT_URL})",
+        help=f"XML API endpoint (default: {DEFAULT_URL})",
     )
     parser.add_argument(
         "--out",
@@ -310,35 +280,20 @@ Examples:
     )
     args = parser.parse_args()
     
-    # -------------------------------------------------------------------------
-    # Step 2: Setup output directory
-    # -------------------------------------------------------------------------
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     
     print(f"🔍 Crawling data from: {args.url}")
     
-    # -------------------------------------------------------------------------
-    # Step 3: Crawl data from HTML table
-    # -------------------------------------------------------------------------
-    raw = crawl_students_table(args.url)
+    raw = crawl_students(args.url)
     print(f"✅ Crawled {len(raw)} students")
     
-    # -------------------------------------------------------------------------
-    # Step 4: Clean and normalize data
-    # -------------------------------------------------------------------------
     cleaned = clean_students(raw)
     print("✅ Data cleaned and normalized")
     
-    # -------------------------------------------------------------------------
-    # Step 5: Perform analysis
-    # -------------------------------------------------------------------------
     results = analyze(cleaned)
     print(f"✅ Generated {len(results)} analysis sheets")
     
-    # -------------------------------------------------------------------------
-    # Step 6: Export to Excel
-    # -------------------------------------------------------------------------
     with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
         # Write raw data
         raw.to_excel(writer, sheet_name="raw", index=False)
@@ -352,9 +307,6 @@ Examples:
             safe_sheet = sheet[:31]
             df.to_excel(writer, sheet_name=safe_sheet, index=True)
     
-    # -------------------------------------------------------------------------
-    # Step 7: Print summary
-    # -------------------------------------------------------------------------
     print(f"\n📊 Saved: {out_path.resolve()}")
     print("\n📋 Excel Sheets Created:")
     print("   - raw: Original crawled data")

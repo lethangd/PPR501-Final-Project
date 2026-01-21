@@ -37,6 +37,7 @@ Write-Host "[INFO] Running crawler..." -ForegroundColor Yellow
 Write-Host ""
 
 # Run crawler with volume mount for output
+# Crawler image defaults to: http://backend:8000/api/students
 docker run --rm -v "${PWD}/output:/app/output" --network ppr501-final-project_default student-crawler
 
 if ($LASTEXITCODE -eq 0) {

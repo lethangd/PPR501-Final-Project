@@ -13,18 +13,13 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from sqlalchemy.orm import Session
-from starlette.templating import Jinja2Templates
 
 from app.api.v1.router import router as api_router
 from app.core.config import settings
-from app.core.database import engine, get_db
+from app.core.database import engine
 from app.models import Base
-from app.services.student_service import StudentService
-from app.utils.data_cleaner import data_cleaner
 
 
 @asynccontextmanager
@@ -60,7 +55,6 @@ app = FastAPI(
     ### Features
     - 100 sinh viên được seed sẵn khi khởi tạo database
     - Hỗ trợ Pandas để tiền xử lý dữ liệu
-    - HTML page cho crawler tại `/students`
     """,
     openapi_tags=[
         {
@@ -84,8 +78,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Templates cho HTML pages
-templates = Jinja2Templates(directory="app/templates")
 
 
 # === Health Check ===
@@ -104,45 +96,6 @@ def health_check() -> dict[str, str]:
         Dict với status "ok" nếu service hoạt động
     """
     return {"status": "ok"}
-
-
-# === HTML Page cho Crawler ===
-
-@app.get(
-    "/students",
-    response_class=HTMLResponse,
-    tags=["Health"],
-    summary="HTML table của sinh viên",
-    description="Trang HTML hiển thị bảng sinh viên cho mục đích crawling.",
-)
-def students_html_page(
-    request: Request,
-    db: Session = Depends(get_db),
-) -> HTMLResponse:
-    """
-    Render HTML page với bảng sinh viên.
-    
-    Page này được sử dụng bởi crawler project để scrape data
-    bằng pandas.read_html().
-    
-    Args:
-        request: FastAPI Request object
-        db: Database session
-        
-    Returns:
-        HTMLResponse với table chứa tất cả sinh viên
-    """
-    service = StudentService(db)
-    students = service.get_all()
-    
-    records = [service.to_dict(s) for s in students]
-    records = data_cleaner.clean_records(records)
-    
-    return templates.TemplateResponse(
-        request=request,
-        name="students.html",
-        context={"students": records},
-    )
 
 
 # === Include API Routers ===

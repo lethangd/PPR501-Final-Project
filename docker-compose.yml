@@ -28,13 +28,5 @@ services:
       db:
         condition: service_healthy
 
-  frontend:
-    build:
-      context: ./frontend
-    ports:
-      - "${FRONTEND_PORT:-3000}:80"
-    depends_on:
-      - backend
-
 volumes:
   db_data:

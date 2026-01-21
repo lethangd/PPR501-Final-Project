@@ -1,14 +1,13 @@
 <p align="center">
   <h1 align="center">🎓 Student Management System</h1>
   <p align="center">
-    <strong>Full-stack web application for managing student records</strong>
+    <strong>Desktop + API application for managing student records</strong>
   </p>
   <p align="center">
     <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
-    <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
     <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
     <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
-    <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind"/>
+    <img src="https://img.shields.io/badge/Tkinter-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Tkinter"/>
   </p>
 </p>
 
@@ -22,7 +21,6 @@
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Usage](#-usage)
-  - [Web Interface](#web-interface)
   - [API Endpoints](#api-endpoints)
   - [Data Crawler](#data-crawler--analysis)
 - [Project Structure](#-project-structure)
@@ -40,7 +38,8 @@
 A comprehensive student management system built with modern technologies. The system provides:
 
 - **RESTful API** returning XML responses
-- **Beautiful UI** with React and Tailwind CSS
+- **Desktop UI** with Tkinter (Windows-friendly)
+- **Built-in Charts** with Seaborn/Matplotlib
 - **Data Analysis** capabilities with Pandas
 - **Containerized** deployment with Docker Compose
 
@@ -49,7 +48,7 @@ A comprehensive student management system built with modern technologies. The sy
 | Layer | Technology | Version |
 |-------|------------|---------|
 | **Backend** | FastAPI, SQLAlchemy, Pydantic | Python 3.11 |
-| **Frontend** | React, Vite, Tailwind CSS | React 18 |
+| **Desktop App (UI)** | Tkinter + requests + Matplotlib/Seaborn | Python 3.10+ |
 | **Database** | PostgreSQL | 16-alpine |
 | **Container** | Docker Compose | v2 |
 | **Data Analysis** | Pandas, OpenPyXL | Latest |
@@ -64,8 +63,9 @@ A comprehensive student management system built with modern technologies. The sy
 | ✅ **XML API** | All endpoints return `application/xml` |
 | ✅ **Partial Data** | Students can have missing fields |
 | ✅ **100 Sample Records** | Pre-seeded database on startup |
-| ✅ **Beautiful UI** | Tailwind CSS + Headless UI |
-| ✅ **Data Crawler** | Scrape & analyze data with Pandas |
+| ✅ **Desktop UI** | Tkinter với giao diện trực quan |
+| ✅ **Charts** | Biểu đồ thống kê với Seaborn/Matplotlib |
+| ✅ **Data Crawler** | Phân tích dữ liệu từ XML API |
 | ✅ **Excel Export** | Export analysis to Excel file |
 | ✅ **Docker Ready** | One command deployment |
 
@@ -82,17 +82,16 @@ cd PPR501-Final-Project
 # 2. Create environment file
 cp .env.example .env
 
-# 3. Start all services
-docker compose up --build -d
+# 3. Start backend services (db + api)
+docker compose up --build -d db backend
 ```
 
-🎉 **Done!** Access the application:
+🎉 **Done!** Access the services:
 
 | Service | URL |
 |---------|-----|
-| 🌐 Frontend | http://localhost:3000 |
+| 🖥 Desktop App | Run locally (Tkinter) |
 | 📖 API Docs | http://localhost:8000/docs |
-| 📊 HTML Table | http://localhost:8000/students |
 
 ---
 
@@ -106,6 +105,8 @@ Before you begin, ensure you have the following installed:
 | Git | Latest | [git-scm.com](https://git-scm.com/) |
 
 > 📝 **Note**: Python is NOT required! The crawler runs via Docker.
+
+> 📝 **Desktop app note**: The Tkinter desktop app runs locally, so it requires Python 3.10+ on your machine.
 
 ---
 
@@ -121,8 +122,8 @@ cd PPR501-Final-Project
 # Create environment configuration
 cp .env.example .env
 
-# Build and start all services
-docker compose up --build -d
+# Build and start backend services
+docker compose up --build -d db backend
 
 # View logs (optional)
 docker compose logs -f
@@ -153,31 +154,69 @@ export DATABASE_URL="postgresql+psycopg2://user:pass@localhost:5432/students_db"
 uvicorn app.main:app --reload --port 8000
 ```
 
-#### Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-
 </details>
 
 ---
 
 ## 📖 Usage
 
-### Web Interface
+### Desktop App (Tkinter)
 
-1. Open http://localhost:3000 in your browser
-2. View the list of 100 pre-seeded students
-3. **Add Student**: Fill the form and click "Thêm sinh viên"
-4. **Edit Student**: Click on a row to select, modify form, click "Cập nhật"
-5. **Delete Student**: Click delete icon, confirm in dialog
+The desktop app is the primary UI.
+
+#### Option A (Recommended): Backend via Docker + Desktop UI local
+
+1) Start backend:
+
+```bash
+docker compose up --build -d db backend
+```
+
+2) Install Python 3.10+ (Windows):
+- Download: https://www.python.org/downloads/
+- During install, check **"Add Python to PATH"**
+
+3) Create virtual environment + install deps:
+
+```powershell
+cd desktop_app
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Alternatively (one-click from project root):
+
+```powershell
+.\run_desktop.ps1
+```
+
+4) Run the desktop app:
+
+```powershell
+cd ..
+python -m desktop_app.app --api http://localhost:8000/api
+```
+
+Trong app, tab **Thống kê** hiển thị biểu đồ phân tích điểm số và phân bố theo quê quán.
+
+#### Option B: Run backend locally (no Docker)
+
+If you want to run everything without Docker, you can run FastAPI locally.
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# Set DATABASE_URL (example; adjust credentials/host if needed)
+$env:DATABASE_URL = "postgresql+psycopg2://students_user:students_pass@localhost:5432/students_db"
+
+uvicorn app.main:app --reload --port 8000
+```
+
+Note: local backend still requires a PostgreSQL database (you can keep only db in Docker: `docker compose up -d db`).
 
 ### API Endpoints
 
@@ -228,18 +267,12 @@ PPR501-Final-Project/
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-├── 📂 frontend/                # React Frontend Service
-│   ├── 📂 src/
-│   │   ├── 📂 components/     # UI Components
-│   │   │   ├── ui/           # Reusable (Button, Input, etc.)
-│   │   │   ├── layout/       # Header, Footer
-│   │   │   └── students/     # Student-specific
-│   │   ├── 📂 hooks/         # Custom React hooks
-│   │   ├── 📂 services/      # API service layer
-│   │   ├── 📂 pages/         # Page components
-│   │   └── 📂 utils/         # Helpers, XML parser
-│   ├── Dockerfile
-│   └── package.json
+├── 📂 desktop_app/             # Tkinter Desktop App (Primary UI)
+│   ├── app.py
+│   ├── charts.py
+│   ├── student_api.py
+│   ├── xml_parser.py
+│   └── requirements.txt
 │
 ├── 📂 crawler/                 # Data Crawler & Analysis
 │   ├── crawl_and_analyze.py   # Main crawler script
@@ -254,6 +287,39 @@ PPR501-Final-Project/
 └── README.md                 # This file
 ```
 
+### 📌 Giải thích cấu trúc & ý nghĩa từng file/folder
+
+#### backend/
+- app/main.py: Khởi tạo FastAPI app, CORS, router, health check.
+- app/api/v1/endpoints/students.py: CRUD XML endpoints cho sinh viên.
+- app/core/: cấu hình và kết nối database.
+- app/models/: ORM models.
+- app/schemas/: Pydantic schemas cho validate dữ liệu.
+- app/services/: business logic (StudentService).
+- app/utils/: xử lý XML + làm sạch dữ liệu.
+- Dockerfile: build backend container.
+- requirements.txt: dependencies backend.
+
+#### desktop_app/
+- app.py: UI chính (Tkinter), table + form CRUD + tab biểu đồ.
+- charts.py: tạo biểu đồ thống kê bằng seaborn/matplotlib.
+- student_api.py: client gọi API XML.
+- xml_parser.py: parse XML -> StudentRecord + tạo payload JSON.
+- requirements.txt: dependencies desktop app.
+
+#### crawler/
+- crawl_and_analyze.py: crawl từ XML API, phân tích, export Excel.
+- Dockerfile: build crawler container.
+- requirements.txt: dependencies crawler.
+
+#### docker/
+- db/init.sql: schema + seed dữ liệu.
+- db/students.csv: 100 dữ liệu mẫu.
+
+#### scripts
+- run_desktop.ps1 / run_desktop.bat: chạy desktop app (one-click).
+- run_crawler.ps1 / run_crawler.bat: chạy crawler (one-click).
+
 ---
 
 ## 🏗 Architecture
@@ -266,13 +332,13 @@ PPR501-Final-Project/
 ├─────────────────┬─────────────────────┬─────────────────────────┤
 │                 │                     │                         │
 │  ┌───────────┐  │  ┌───────────────┐  │  ┌─────────────────┐   │
-│  │ Frontend  │  │  │    Backend    │  │  │   PostgreSQL    │   │
-│  │  (React)  │──┼──│   (FastAPI)   │──┼──│   (Database)    │   │
-│  │  :3000    │  │  │    :8000      │  │  │     :5432       │   │
+│  │ Desktop   │  │  │    Backend    │  │  │   PostgreSQL    │   │
+│  │ (Tkinter) │──┼──│   (FastAPI)   │──┼──│   (Database)    │   │
+│  │  local    │  │  │    :8000      │  │  │     :5432       │   │
 │  └───────────┘  │  └───────────────┘  │  └─────────────────┘   │
 │        │        │         │           │           │             │
-│   Nginx Proxy   │    REST API         │     100 Students       │
-│   /api/* ───────┼────────>│           │        Seeded          │
+│   HTTP Client   │    REST API (XML)   │     100 Students       │
+│   requests      │────────>│           │        Seeded          │
 │                 │                     │                         │
 └─────────────────┴─────────────────────┴─────────────────────────┘
                               │
@@ -372,7 +438,7 @@ http://localhost:8000/api
 
 ## 🔍 Crawler & Data Analysis
 
-The crawler scrapes student data from the HTML table and performs statistical analysis using Pandas.
+The crawler reads data from the **XML API** and performs statistical analysis using Pandas.
 
 ### Quick Run (No Python Required) 🐳
 
@@ -444,7 +510,6 @@ Before running the crawler, ensure Docker services are running:
 docker ps
 
 # Expected output:
-# ppr501-final-project-frontend-1   Up   0.0.0.0:3000->80/tcp
 # ppr501-final-project-backend-1    Up   0.0.0.0:8000->8000/tcp
 # ppr501-final-project-db-1         Up   0.0.0.0:5432->5432/tcp
 ```
@@ -457,7 +522,7 @@ python crawler/crawl_and_analyze.py
 
 # Custom URL and output
 python crawler/crawl_and_analyze.py \
-  --url http://localhost:8000/students \
+  --url http://localhost:8000/api/students \
   --out output/students_analysis.xlsx
 ```
 
@@ -519,7 +584,7 @@ Correlation(english, math) = 0.0234
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--url` | `http://localhost:8000/students` | URL of HTML page with students table |
+| `--url` | `http://localhost:8000/api/students` | XML API endpoint |
 | `--out` | `output/students.xlsx` | Output Excel file path |
 
 ---
@@ -549,10 +614,6 @@ Correlation(english, math) = 0.0234
 # Backend with hot-reload
 cd backend
 uvicorn app.main:app --reload
-
-# Frontend with hot-reload
-cd frontend
-npm run dev
 ```
 
 ---
@@ -588,26 +649,14 @@ docker compose up --build
 </details>
 
 <details>
-<summary><b>🔴 Frontend shows empty page</b></summary>
-
-```bash
-# Check backend is responding
-curl http://localhost:8000/api/students
-
-# Check frontend logs
-docker compose logs frontend
-```
-</details>
-
-<details>
 <summary><b>🔴 Crawler fails with connection error</b></summary>
 
 ```bash
 # Ensure backend is running
-curl http://localhost:8000/students
+curl http://localhost:8000/api/students
 
-# If HTML table not found, check the URL
-python crawler/crawl_and_analyze.py --url http://localhost:8000/students
+# If API not found, check the URL
+python crawler/crawl_and_analyze.py --url http://localhost:8000/api/students
 ```
 </details>
 
