@@ -9,12 +9,15 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Date, Numeric, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+
+if TYPE_CHECKING:
+    from app.models.province import Province
 
 
 class Student(Base):
@@ -27,7 +30,8 @@ class Student(Base):
         first_name: Tên
         email: Địa chỉ email
         birth_date: Ngày sinh
-        hometown: Quê quán
+        province_id: ID tỉnh/thành phố (Foreign Key)
+        hometown: Quê quán (deprecated, sử dụng province_id)
         math_score: Điểm Toán (0-10)
         literature_score: Điểm Văn (0-10)
         english_score: Điểm Tiếng Anh (0-10)
@@ -67,10 +71,26 @@ class Student(Base):
         nullable=True,
         comment="Ngày sinh"
     )
+    
+    # Province - Foreign Key
+    province_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("provinces.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="ID tỉnh/thành phố"
+    )
+    
+    # Deprecated: Keep for backward compatibility, will be removed
     hometown: Mapped[Optional[str]] = mapped_column(
         Text, 
         nullable=True,
-        comment="Quê quán"
+        comment="Quê quán (deprecated)"
+    )
+
+    # Relationship với Province
+    province: Mapped[Optional["Province"]] = relationship(
+        "Province",
+        back_populates="students"
     )
 
     # Điểm số (0-10, optional)

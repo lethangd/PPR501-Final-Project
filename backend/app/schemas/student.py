@@ -48,11 +48,16 @@ class StudentBase(BaseModel):
         description="Ngày sinh (YYYY-MM-DD)",
         examples=["2000-01-15"]
     )
+    province_id: Optional[int] = Field(
+        default=None,
+        description="ID tỉnh/thành phố (Foreign Key to provinces)",
+        examples=[1]
+    )
     hometown: Optional[str] = Field(
         default=None,
         max_length=200,
-        description="Quê quán",
-        examples=["Ha Noi"]
+        description="Quê quán (deprecated, sử dụng province_id)",
+        examples=["Hà Nội"]
     )
     math_score: Optional[float] = Field(
         default=None,
@@ -136,7 +141,15 @@ class StudentResponse(StudentCreate):
     
     Kế thừa từ StudentCreate, bao gồm tất cả thông tin
     của một sinh viên.
+    
+    Thêm province_name (tính toán từ province relationship) để
+    clients không cần lookup riêng.
     """
+    
+    province_name: Optional[str] = Field(
+        default=None,
+        description="Tên tỉnh/thành phố (từ Province relationship)"
+    )
     
     model_config = ConfigDict(
         from_attributes=True,  # Cho phép tạo từ ORM model
@@ -147,7 +160,9 @@ class StudentResponse(StudentCreate):
                 "first_name": "Van A",
                 "email": "vana@example.com",
                 "birth_date": "2000-01-15",
-                "hometown": "Ha Noi",
+                "province_id": 1,
+                "province_name": "Hà Nội",
+                "hometown": "Hà Nội",
                 "math_score": 8.5,
                 "literature_score": 7.0,
                 "english_score": 9.0,

@@ -15,10 +15,11 @@ from ..services.student_service import StudentService
 class StudentListPresenter:
     """Presenter for student list (MVP pattern)."""
     
-    def __init__(self, view: StudentListView, service: StudentService, root_window):
+    def __init__(self, view: StudentListView, service: StudentService, root_window, api_base_url: str = "http://localhost:8000/api"):
         self.view = view
         self.service = service
         self.root_window = root_window
+        self.api_base_url = api_base_url
         
         self.current_page = 0
         self.search_query = ""
@@ -40,7 +41,8 @@ class StudentListPresenter:
         dialog = StudentDialogView(
             self.root_window,
             mode="create",
-            on_save=self._handle_create
+            on_save=self._handle_create,
+            api_base_url=self.api_base_url
         )
         self.root_window.wait_window(dialog)
     
@@ -62,7 +64,8 @@ class StudentListPresenter:
             self.root_window,
             mode="edit",
             student_data=student.to_dict(),
-            on_save=lambda data: self._handle_update(student_id, data)
+            on_save=lambda data: self._handle_update(student_id, data),
+            api_base_url=self.api_base_url
         )
         self.root_window.wait_window(dialog)
     

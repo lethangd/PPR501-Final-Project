@@ -161,6 +161,8 @@ class StudentService:
             "first_name": student.first_name,
             "email": student.email,
             "birth_date": convert_value(student.birth_date),
+            "province_id": student.province_id,
+            "province_name": student.province.name if student.province else None,
             "hometown": student.hometown,
             "math_score": convert_value(student.math_score),
             "literature_score": convert_value(student.literature_score),

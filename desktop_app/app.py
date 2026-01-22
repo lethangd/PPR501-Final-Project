@@ -30,6 +30,7 @@ class StudentApp(ttk.Frame):
     def __init__(self, master: ttk.Window, api_client: StudentApiClient):
         super().__init__(master)
         self.api_client = api_client
+        self.api_base_url = api_client.base_url
         
         # Setup styles
         self._setup_styles()
@@ -69,7 +70,8 @@ class StudentApp(ttk.Frame):
         self.student_list_presenter = StudentListPresenter(
             view=self.student_list_view,
             service=self.student_service,
-            root_window=self.master
+            root_window=self.master,
+            api_base_url=self.api_base_url
         )
         # Inject presenter after creation
         self.student_list_view.presenter = self.student_list_presenter
@@ -99,7 +101,7 @@ class StudentApp(ttk.Frame):
                 self.stats_view.after(0, lambda: self.stats_view.render_charts(students))
             except Exception as e:
                 print(f"Error loading stats: {e}")
-        
+
         threading.Thread(target=work, daemon=True).start()
 
 
@@ -147,10 +149,10 @@ def main() -> None:
         help="Base API URL (default: http://localhost:8000/api)",
     )
     args = parser.parse_args()
-    
+
     # Initialize API client
     api = StudentApiClient(base_url=args.api)
-    
+
     # Create ttkbootstrap window with modern theme
     # Themes: flatly, darkly, cosmo, journal, litera, lumen, minty, pulse, sandstone, superhero, yeti
     root = ttk.Window(
@@ -162,12 +164,12 @@ def main() -> None:
     
     # Create app
     app = StudentApp(root, api)
-    
+
     # Handle close
     def on_close() -> None:
         api.close()
         root.destroy()
-    
+
     root.protocol("WM_DELETE_WINDOW", on_close)
     
     # Start

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import students
+from app.api.v1.endpoints import provinces, students
 
 # Router chính cho API v1
 router = APIRouter(prefix="/api")
@@ -19,4 +19,10 @@ router.include_router(
     students.router,
     prefix="/students",
     tags=["Students"],
+)
+
+router.include_router(
+    provinces.router,
+    prefix="/provinces",
+    tags=["Provinces"],
 )
