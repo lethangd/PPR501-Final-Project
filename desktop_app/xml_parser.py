@@ -103,7 +103,10 @@ def to_api_payload(values: Dict[str, str], *, include_student_id: bool) -> Dict[
         v = (values.get(key) or "").strip()
         if not v:
             return
-        payload[key] = float(v)
+        try:
+            payload[key] = float(v)
+        except ValueError:
+            raise ValueError(f"Điểm '{key}' không hợp lệ: '{v}'. Vui lòng nhập số từ 0-10.")
 
     if include_student_id:
         add_str("student_id")
